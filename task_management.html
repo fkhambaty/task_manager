@@ -1,0 +1,1449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Management</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .calendar-section {
+            padding: 30px;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .calendar-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .date-selector {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .date-selector label {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 1em;
+        }
+
+        .date-selector input[type="date"] {
+            padding: 10px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        .date-selector input[type="date"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .date-nav-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-date-nav {
+            padding: 10px 20px;
+            border: 2px solid #667eea;
+            background: white;
+            color: #667eea;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-date-nav:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-today {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-today:hover {
+            background: #5568d3;
+        }
+
+        .date-info {
+            background: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .date-info-title {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .date-info-stats {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .owner-label {
+            padding: 15px 30px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e0e0e0;
+            text-align: right;
+            font-size: 0.85em;
+            color: #666;
+            font-style: italic;
+        }
+
+        .progress-section {
+            padding: 30px;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .progress-card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .progress-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .progress-percentage {
+            font-size: 1.5em;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 30px;
+            background: #e0e0e0;
+            border-radius: 15px;
+            overflow: hidden;
+            position: relative;
+            display: flex;
+        }
+
+        .progress-bar-segment {
+            height: 100%;
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 0.85em;
+        }
+
+        .progress-bar-completed {
+            background: linear-gradient(90deg, #4caf50 0%, #66bb6a 100%);
+        }
+
+        .progress-bar-in-progress {
+            background: linear-gradient(90deg, #ff9800 0%, #ffb74d 100%);
+            border-left: 2px solid rgba(255, 255, 255, 0.3);
+            border-right: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .progress-bar-pending {
+            background: linear-gradient(90deg, #e0e0e0 0%, #bdbdbd 100%);
+        }
+
+        .progress-stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 1.8em;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .form-section {
+            padding: 30px;
+        }
+
+        .form-title {
+            font-size: 1.5em;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 150px 150px;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+        }
+
+        .form-group input,
+        .form-group select {
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .tasks-section {
+            padding: 30px;
+            background: #f8f9fa;
+        }
+
+        .tasks-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .tasks-title {
+            font-size: 1.5em;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .tasks-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .task-card {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .task-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+        }
+
+        .task-card.completed {
+            background: #f0f9ff;
+            border-color: #4caf50;
+        }
+
+        .task-card.in-progress {
+            background: #fff3e0;
+            border-color: #ff9800;
+        }
+
+        .task-sequence {
+            min-width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.1em;
+        }
+
+        .task-card.completed .task-sequence {
+            background: #4caf50;
+        }
+
+        .task-card.in-progress .task-sequence {
+            background: #ff9800;
+        }
+
+        .task-content {
+            flex: 1;
+        }
+
+        .task-details {
+            font-size: 1.1em;
+            color: #2c3e50;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        .task-date-info {
+            font-size: 0.8em;
+            color: #999;
+            margin-top: 5px;
+        }
+
+        .task-history-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.75em;
+            font-weight: 600;
+            margin-left: 5px;
+        }
+
+        .badge-created {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .badge-modified {
+            background: #fff3e0;
+            color: #f57c00;
+        }
+
+        .task-card.completed .task-details {
+            text-decoration: line-through;
+            color: #999;
+        }
+
+        .task-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-checkbox {
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            accent-color: #667eea;
+        }
+
+        .status-label {
+            font-size: 0.9em;
+            color: #666;
+            font-weight: 600;
+        }
+
+        .task-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-icon {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s;
+        }
+
+        .btn-edit {
+            background: #ffc107;
+            color: white;
+        }
+
+        .btn-edit:hover {
+            background: #ffb300;
+        }
+
+        .btn-delete {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background: #d32f2f;
+        }
+
+        .btn-in-progress {
+            background: #ff9800;
+            color: white;
+        }
+
+        .btn-in-progress:hover {
+            background: #f57c00;
+        }
+
+        .btn-comment {
+            background: #2196f3;
+            color: white;
+            padding: 6px 10px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85em;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn-comment:hover {
+            background: #1976d2;
+        }
+
+        .comment-icon {
+            font-size: 0.9em;
+        }
+
+        .comment-section {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #e0e0e0;
+            display: none;
+        }
+
+        .comment-section.active {
+            display: block;
+        }
+
+        .comment-label {
+            font-size: 0.85em;
+            font-weight: 600;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .comment-textarea {
+            width: 100%;
+            min-height: 80px;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 0.9em;
+            font-family: inherit;
+            resize: vertical;
+            transition: border-color 0.3s;
+        }
+
+        .comment-textarea:focus {
+            outline: none;
+            border-color: #2196f3;
+        }
+
+        .comment-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .btn-save-comment {
+            background: #4caf50;
+            color: white;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-save-comment:hover {
+            background: #45a049;
+        }
+
+        .btn-cancel-comment {
+            background: #9e9e9e;
+            color: white;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-cancel-comment:hover {
+            background: #757575;
+        }
+
+        .comment-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #f44336;
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7em;
+            font-weight: 700;
+        }
+
+        .comment-icon-wrapper {
+            position: relative;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .empty-state-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+
+        .sort-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .sort-btn {
+            padding: 8px 15px;
+            border: 2px solid #e0e0e0;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s;
+        }
+
+        .sort-btn:hover,
+        .sort-btn.active {
+            border-color: #667eea;
+            background: #667eea;
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .task-card {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .task-actions {
+                width: 100%;
+                justify-content: flex-end;
+            }
+
+            .progress-stats {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .calendar-controls {
+                flex-direction: column;
+            }
+
+            .date-selector {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .date-nav-buttons {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .date-info {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="owner-label">Fakhruddin Khambaty's Task Hub</div>
+
+        <div class="calendar-section">
+            <div class="calendar-controls">
+                <div class="date-selector">
+                    <label for="selected-date">View Date:</label>
+                    <input type="date" id="selected-date">
+                    <div class="date-nav-buttons">
+                        <button class="btn-date-nav" onclick="navigateDate(-1)">← Previous</button>
+                        <button class="btn-date-nav btn-today" onclick="goToToday()">Today</button>
+                        <button class="btn-date-nav" onclick="navigateDate(1)">Next →</button>
+                    </div>
+                </div>
+                <div class="date-info">
+                    <div class="date-info-title" id="date-display">Today</div>
+                    <div class="date-info-stats" id="date-stats">Loading...</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="progress-section">
+            <div class="progress-card">
+                <div class="progress-header">
+                    <div class="progress-title">Overall Progress</div>
+                    <div class="progress-percentage" id="progress-percentage">0%</div>
+                </div>
+                <div class="progress-bar-container" id="progress-bar-container">
+                    <div class="progress-bar-segment progress-bar-completed" id="progress-bar-completed" style="width: 0%"></div>
+                    <div class="progress-bar-segment progress-bar-in-progress" id="progress-bar-in-progress" style="width: 0%"></div>
+                    <div class="progress-bar-segment progress-bar-pending" id="progress-bar-pending" style="width: 0%"></div>
+                </div>
+                <div class="progress-stats">
+                    <div class="stat-item">
+                        <div class="stat-number" id="total-tasks">0</div>
+                        <div class="stat-label">Total Tasks</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="completed-tasks">0</div>
+                        <div class="stat-label">Completed</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="in-progress-tasks">0</div>
+                        <div class="stat-label">In Progress</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="pending-tasks">0</div>
+                        <div class="stat-label">Pending</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <div class="form-title">Add New Task</div>
+            <form id="task-form">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="task-details">Task Details</label>
+                        <input type="text" id="task-details" placeholder="Enter task description..." required>
+                    </div>
+                    <div class="form-group">
+                        <label for="task-sequence">Sequence</label>
+                        <input type="number" id="task-sequence" placeholder="Order" min="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="task-status">Status</label>
+                        <select id="task-status" required>
+                            <option value="pending">Pending</option>
+                            <option value="in-progress">In Progress</option>
+                            <option value="completed">Completed</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Add Task</button>
+                    <button type="button" class="btn btn-secondary" id="clear-form">Clear</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="tasks-section">
+            <div class="tasks-header">
+                <div class="tasks-title">Tasks List</div>
+                <div class="sort-controls">
+                    <button class="sort-btn active" data-sort="sequence">By Sequence</button>
+                    <button class="sort-btn" data-sort="status">By Status</button>
+                    <button class="sort-btn" data-sort="name">By Name</button>
+                </div>
+            </div>
+            <div class="tasks-list" id="tasks-list">
+                <div class="empty-state">
+                    <div class="empty-state-icon">📝</div>
+                    <h3>No tasks yet</h3>
+                    <p>Add your first task to get started</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        // Import the functions you need from the SDKs
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getFirestore, collection, doc, setDoc, getDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+        // Your web app's Firebase configuration
+        // REPLACE THESE VALUES WITH YOUR FIREBASE CONFIG
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+
+        // Initialize Firebase only if config is provided
+        let app, db;
+        let useFirebase = false;
+        
+        if (firebaseConfig.apiKey && firebaseConfig.apiKey !== "YOUR_API_KEY") {
+            try {
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                useFirebase = true;
+                console.log('Firebase initialized successfully');
+            } catch (e) {
+                console.error('Firebase initialization error:', e);
+                useFirebase = false;
+            }
+        }
+
+        // Make Firebase available globally
+        window.firebaseDb = db;
+        window.useFirebase = useFirebase;
+        window.firebaseCollection = 'tasks';
+        window.firebaseHistoryCollection = 'taskHistory';
+    </script>
+
+    <script>
+        let tasks = [];
+        let taskHistory = [];
+        let currentSort = 'sequence';
+        let editingTaskId = null;
+        let selectedDate = new Date().toISOString().split('T')[0];
+        let firebaseUnsubscribe = null;
+
+        // Wait for DOM to be fully loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initialize date picker
+            const dateInput = document.getElementById('selected-date');
+            if (dateInput) {
+                dateInput.value = selectedDate;
+                dateInput.addEventListener('change', (e) => {
+                    selectedDate = e.target.value;
+                    updateDateDisplay();
+                    renderTasks();
+                    updateProgress();
+                });
+            }
+
+            // Handle form submission
+            const taskForm = document.getElementById('task-form');
+            if (taskForm) {
+                taskForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    
+                    const details = document.getElementById('task-details').value.trim();
+                    const sequence = parseInt(document.getElementById('task-sequence').value);
+                    const status = document.getElementById('task-status').value;
+                    const today = new Date().toISOString().split('T')[0];
+
+                    if (editingTaskId) {
+                        // Update existing task
+                        const task = tasks.find(t => t.id === editingTaskId);
+                        if (task) {
+                            const oldData = { ...task };
+                            task.details = details;
+                            task.sequence = sequence;
+                            const statusChanged = task.status !== status;
+                            task.status = status;
+                            task.modifiedOn = today;
+                            recordHistory('updated', editingTaskId, task, oldData);
+                            if (statusChanged) {
+                                recordHistory('status-changed', editingTaskId, task, oldData);
+                            }
+                        }
+                        editingTaskId = null;
+                        document.querySelector('.btn-primary').textContent = 'Add Task';
+                    } else {
+                        // Add new task
+                        const newTask = {
+                            id: generateId(),
+                            details: details,
+                            sequence: sequence,
+                            status: status,
+                            createdOn: today,
+                            modifiedOn: today,
+                            comment: ''
+                        };
+                        tasks.push(newTask);
+                        recordHistory('created', newTask.id, newTask);
+                    }
+
+                    document.getElementById('task-form').reset();
+                    saveTasks();
+                });
+            }
+
+            // Clear form button
+            const clearFormBtn = document.getElementById('clear-form');
+            if (clearFormBtn) {
+                clearFormBtn.addEventListener('click', () => {
+                    document.getElementById('task-form').reset();
+                    editingTaskId = null;
+                    document.querySelector('.btn-primary').textContent = 'Add Task';
+                });
+            }
+
+            // Sort controls
+            document.querySelectorAll('.sort-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentSort = btn.dataset.sort;
+                    renderTasks();
+                });
+            });
+
+            // Load tasks immediately
+            loadTasks();
+        });
+
+        // Load tasks and history from Firebase or localStorage
+        async function loadTasks() {
+            try {
+                if (window.useFirebase && window.firebaseDb) {
+                    // Load from Firebase
+                    await loadFromFirebase();
+                } else {
+                    // Load from localStorage
+                    loadFromLocalStorage();
+                }
+            } catch (e) {
+                console.error('Error loading tasks:', e);
+                // Fallback to localStorage
+                loadFromLocalStorage();
+            }
+        }
+
+        // Load from Firebase
+        async function loadFromFirebase() {
+            const db = window.firebaseDb;
+            const { getDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+            
+            try {
+                // Load tasks
+                const tasksDoc = await getDoc(doc(db, window.firebaseCollection, 'data'));
+                if (tasksDoc.exists()) {
+                    tasks = tasksDoc.data().tasks || [];
+                } else {
+                    tasks = [];
+                }
+
+                // Load history
+                const historyDoc = await getDoc(doc(db, window.firebaseHistoryCollection, 'data'));
+                if (historyDoc.exists()) {
+                    taskHistory = historyDoc.data().history || [];
+                } else {
+                    taskHistory = [];
+                }
+
+                // Migrate and save back if needed
+                migrateTasks();
+                await saveToFirebase();
+
+                // Set up real-time listener
+                setupFirebaseListener();
+
+                // Update UI
+                updateDateDisplay();
+                renderTasks();
+                updateProgress();
+            } catch (e) {
+                console.error('Error loading from Firebase:', e);
+                loadFromLocalStorage();
+            }
+        }
+
+        // Set up real-time Firebase listener
+        async function setupFirebaseListener() {
+            if (!window.useFirebase || !window.firebaseDb) return;
+
+            const db = window.firebaseDb;
+            const { onSnapshot, doc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+
+            // Unsubscribe from previous listener if exists
+            if (firebaseUnsubscribe) {
+                firebaseUnsubscribe();
+            }
+
+            // Listen for changes
+            firebaseUnsubscribe = onSnapshot(doc(db, window.firebaseCollection, 'data'), (doc) => {
+                if (doc.exists()) {
+                    tasks = doc.data().tasks || [];
+                    updateDateDisplay();
+                    renderTasks();
+                    updateProgress();
+                }
+            });
+        }
+
+        // Load from localStorage
+        function loadFromLocalStorage() {
+            const saved = localStorage.getItem('tasks');
+            const savedHistory = localStorage.getItem('taskHistory');
+            
+            if (saved) {
+                try {
+                    tasks = JSON.parse(saved);
+                } catch (e) {
+                    console.error('Error parsing tasks from localStorage:', e);
+                    tasks = [];
+                }
+            } else {
+                tasks = [];
+            }
+            
+            if (savedHistory) {
+                try {
+                    taskHistory = JSON.parse(savedHistory);
+                } catch (e) {
+                    console.error('Error parsing task history from localStorage:', e);
+                    taskHistory = [];
+                }
+            } else {
+                taskHistory = [];
+            }
+
+            migrateTasks();
+            
+            // Update UI
+            updateDateDisplay();
+            renderTasks();
+            updateProgress();
+        }
+
+        // Migrate tasks to include required fields
+        function migrateTasks() {
+            const today = new Date().toISOString().split('T')[0];
+            tasks = tasks.map(task => {
+                if (!task.createdOn) {
+                    task.createdOn = today;
+                    task.modifiedOn = today;
+                }
+                if (!task.modifiedOn) {
+                    task.modifiedOn = task.createdOn;
+                }
+                if (!task.hasOwnProperty('comment')) {
+                    task.comment = '';
+                }
+                return task;
+            });
+        }
+
+        // Save tasks and history to Firebase or localStorage
+        function saveTasks() {
+            try {
+                if (window.useFirebase && window.firebaseDb) {
+                    // Save to Firebase (async, but don't block UI)
+                    saveToFirebase().catch(e => {
+                        console.error('Error saving to Firebase:', e);
+                        saveToLocalStorage();
+                    });
+                } else {
+                    saveToLocalStorage();
+                }
+                updateDateDisplay();
+                renderTasks();
+                updateProgress();
+            } catch (e) {
+                console.error('Error saving tasks:', e);
+                saveToLocalStorage();
+            }
+        }
+
+        // Save to Firebase
+        async function saveToFirebase() {
+            const db = window.firebaseDb;
+            const { setDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+            
+            try {
+                await setDoc(doc(db, window.firebaseCollection, 'data'), {
+                    tasks: tasks,
+                    lastUpdated: new Date().toISOString()
+                });
+                
+                await setDoc(doc(db, window.firebaseHistoryCollection, 'data'), {
+                    history: taskHistory,
+                    lastUpdated: new Date().toISOString()
+                });
+            } catch (e) {
+                console.error('Error saving to Firebase:', e);
+                throw e;
+            }
+        }
+
+        // Save to localStorage
+        function saveToLocalStorage() {
+            try {
+                localStorage.setItem('tasks', JSON.stringify(tasks));
+                localStorage.setItem('taskHistory', JSON.stringify(taskHistory));
+            } catch (e) {
+                console.error('Error saving tasks to localStorage:', e);
+                if (e.name === 'QuotaExceededError') {
+                    alert('Storage is full. Please clear some old data.');
+                }
+            }
+        }
+
+        // Record task change in history
+        function recordHistory(action, taskId, taskData, oldData = null) {
+            const historyEntry = {
+                id: generateId(),
+                date: new Date().toISOString().split('T')[0],
+                timestamp: new Date().toISOString(),
+                action: action, // 'created', 'updated', 'deleted', 'status-changed'
+                taskId: taskId,
+                taskData: JSON.parse(JSON.stringify(taskData)),
+                oldData: oldData ? JSON.parse(JSON.stringify(oldData)) : null
+            };
+            taskHistory.push(historyEntry);
+        }
+
+        // Generate unique ID
+        function generateId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2);
+        }
+
+        // Update date display and stats
+        function updateDateDisplay() {
+            const date = new Date(selectedDate);
+            const today = new Date().toISOString().split('T')[0];
+            const isToday = selectedDate === today;
+            
+            const dateStr = date.toLocaleDateString('en-US', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+            
+            document.getElementById('date-display').textContent = isToday ? 'Today - ' + dateStr : dateStr;
+            
+            // Count created: from history OR from tasks without history (backward compatibility)
+            const createdFromHistory = taskHistory.filter(h => 
+                h.date === selectedDate && 
+                h.action === 'created'
+            ).length;
+            
+            // Also count tasks created on this date that don't have a history entry (for backward compatibility)
+            const createdFromTasks = tasks.filter(t => {
+                if (t.createdOn !== selectedDate) return false;
+                // Check if there's already a history entry for this task creation
+                const hasHistory = taskHistory.some(h => 
+                    h.taskId === t.id && 
+                    h.action === 'created' && 
+                    h.date === selectedDate
+                );
+                return !hasHistory;
+            }).length;
+            
+            const created = createdFromHistory + createdFromTasks;
+            
+            // Count tasks updated (but not created) on this date
+            const modified = taskHistory.filter(h => 
+                h.date === selectedDate && 
+                h.action === 'updated'
+            ).length;
+            
+            // Count status changes on this date
+            const statusChanged = taskHistory.filter(h => 
+                h.date === selectedDate && 
+                h.action === 'status-changed'
+            ).length;
+            
+            // Get tasks that are relevant for this date (for display)
+            const dateTasks = getTasksForDate(selectedDate);
+            
+            document.getElementById('date-stats').innerHTML = `
+                ${dateTasks.length} task(s) on this date | 
+                ${created} created | 
+                ${modified} modified | 
+                ${statusChanged} status changes
+            `;
+        }
+
+        // Get tasks that were active/changed on a specific date
+        function getTasksForDate(date) {
+            // Get all tasks that exist (not deleted before this date)
+            const activeTasks = tasks.filter(task => {
+                const deletedEntry = taskHistory.find(h => 
+                    h.taskId === task.id && 
+                    h.action === 'deleted' && 
+                    h.date <= date
+                );
+                return !deletedEntry;
+            });
+
+            // Filter tasks that were created, modified, or had status changes on this date
+            const dateRelevantTasks = activeTasks.filter(task => {
+                const createdOnDate = task.createdOn === date;
+                const modifiedOnDate = task.modifiedOn === date;
+                const statusChangedOnDate = taskHistory.some(h => 
+                    h.taskId === task.id && 
+                    h.action === 'status-changed' && 
+                    h.date === date
+                );
+                return createdOnDate || modifiedOnDate || statusChangedOnDate;
+            });
+
+            return dateRelevantTasks;
+        }
+
+        // Update progress tracker - shows progress for selected date
+        function updateProgress() {
+            // Get tasks that are relevant for the selected date
+            const dateTasks = getTasksForDate(selectedDate);
+            
+            // Calculate status counts for tasks on the selected date
+            let completed = 0;
+            let inProgress = 0;
+            let pending = 0;
+
+            dateTasks.forEach(task => {
+                const taskStatus = getTaskStatusOnDate(task, selectedDate);
+                if (taskStatus === 'completed') {
+                    completed++;
+                } else if (taskStatus === 'in-progress') {
+                    inProgress++;
+                } else {
+                    pending++;
+                }
+            });
+
+            const total = dateTasks.length;
+            const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+            // Update display with date-specific counts
+            document.getElementById('total-tasks').textContent = total;
+            document.getElementById('completed-tasks').textContent = completed;
+            document.getElementById('in-progress-tasks').textContent = inProgress;
+            document.getElementById('pending-tasks').textContent = pending;
+            document.getElementById('progress-percentage').textContent = percentage + '%';
+
+            // Update progress bar segments
+            const completedWidth = total > 0 ? (completed / total) * 100 : 0;
+            const inProgressWidth = total > 0 ? (inProgress / total) * 100 : 0;
+            const pendingWidth = total > 0 ? (pending / total) * 100 : 0;
+
+            const completedBar = document.getElementById('progress-bar-completed');
+            const inProgressBar = document.getElementById('progress-bar-in-progress');
+            const pendingBar = document.getElementById('progress-bar-pending');
+
+            completedBar.style.width = completedWidth + '%';
+            inProgressBar.style.width = inProgressWidth + '%';
+            pendingBar.style.width = pendingWidth + '%';
+
+            // Show labels only if segment is large enough
+            completedBar.textContent = completedWidth > 5 ? completed + ' ✓' : '';
+            inProgressBar.textContent = inProgressWidth > 5 ? inProgress + ' ⚡' : '';
+            pendingBar.textContent = pendingWidth > 5 ? pending + ' ⏳' : '';
+        }
+
+        // Navigate dates
+        function navigateDate(days) {
+            const date = new Date(selectedDate);
+            date.setDate(date.getDate() + days);
+            selectedDate = date.toISOString().split('T')[0];
+            document.getElementById('selected-date').value = selectedDate;
+            updateDateDisplay();
+            renderTasks();
+            updateProgress();
+        }
+
+        // Go to today
+        function goToToday() {
+            selectedDate = new Date().toISOString().split('T')[0];
+            document.getElementById('selected-date').value = selectedDate;
+            updateDateDisplay();
+            renderTasks();
+            updateProgress();
+        }
+
+        // Get task status on a specific date
+        function getTaskStatusOnDate(task, date) {
+            const statusHistory = taskHistory
+                .filter(h => h.taskId === task.id && h.date <= date && h.action === 'status-changed')
+                .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            
+            if (statusHistory.length > 0) {
+                return statusHistory[0].taskData.status;
+            }
+            return task.status;
+        }
+
+        // Render tasks
+        function renderTasks() {
+            const container = document.getElementById('tasks-list');
+            
+            // Get tasks for selected date
+            const dateTasks = getTasksForDate(selectedDate);
+            
+            if (dateTasks.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📝</div>
+                        <h3>No tasks for this date</h3>
+                        <p>No tasks were created, modified, or changed on ${new Date(selectedDate).toLocaleDateString()}</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Sort tasks
+            const sortedTasks = [...dateTasks];
+            if (currentSort === 'sequence') {
+                sortedTasks.sort((a, b) => a.sequence - b.sequence);
+            } else if (currentSort === 'status') {
+                sortedTasks.sort((a, b) => {
+                    const statusA = getTaskStatusOnDate(a, selectedDate);
+                    const statusB = getTaskStatusOnDate(b, selectedDate);
+                    if (statusA === statusB) return a.sequence - b.sequence;
+                    const statusOrder = { 'completed': 2, 'in-progress': 1, 'pending': 0 };
+                    return statusOrder[statusA] - statusOrder[statusB];
+                });
+            } else if (currentSort === 'name') {
+                sortedTasks.sort((a, b) => {
+                    const nameA = a.details.toLowerCase();
+                    const nameB = b.details.toLowerCase();
+                    if (nameA < nameB) return -1;
+                    if (nameA > nameB) return 1;
+                    return a.sequence - b.sequence;
+                });
+            }
+
+            container.innerHTML = sortedTasks.map(task => {
+                const taskStatus = getTaskStatusOnDate(task, selectedDate);
+                const statusClass = taskStatus === 'completed' ? 'completed' : (taskStatus === 'in-progress' ? 'in-progress' : '');
+                const statusLabel = taskStatus === 'completed' ? 'Completed' : (taskStatus === 'in-progress' ? 'In Progress' : 'Pending');
+                
+                // Check if task was created or modified on this date
+                const createdOnDate = task.createdOn === selectedDate;
+                const modifiedOnDate = task.modifiedOn === selectedDate && task.createdOn !== selectedDate;
+                
+                // Check if task has comments
+                const hasComment = task.comment && task.comment.trim().length > 0;
+                
+                return `
+                <div class="task-card ${statusClass}" data-id="${task.id}">
+                    <div class="task-sequence">${task.sequence}</div>
+                    <div class="task-content">
+                        <div class="task-details">
+                            ${escapeHtml(task.details)}
+                            ${createdOnDate ? '<span class="task-history-badge badge-created">Created</span>' : ''}
+                            ${modifiedOnDate ? '<span class="task-history-badge badge-modified">Modified</span>' : ''}
+                        </div>
+                        <div class="task-status">
+                            <input type="checkbox" class="status-checkbox" ${taskStatus === 'completed' ? 'checked' : ''} 
+                                   onchange="toggleTaskStatus('${task.id}')">
+                            <span class="status-label">${statusLabel}</span>
+                        </div>
+                        <div class="task-date-info">
+                            Created: ${new Date(task.createdOn).toLocaleDateString()} | 
+                            Last Modified: ${new Date(task.modifiedOn).toLocaleDateString()}
+                        </div>
+                        <div class="comment-section" id="comment-section-${task.id}">
+                            <div class="comment-label">Comment:</div>
+                            <textarea class="comment-textarea" id="comment-input-${task.id}" placeholder="Add a comment...">${hasComment ? escapeHtml(task.comment) : ''}</textarea>
+                            <div class="comment-actions">
+                                <button class="btn-save-comment" onclick="saveComment('${task.id}')">Save Comment</button>
+                                <button class="btn-cancel-comment" onclick="toggleComment('${task.id}')">Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="task-actions">
+                        <div class="comment-icon-wrapper">
+                            <button class="btn-comment" onclick="toggleComment('${task.id}')" title="Add/View Comment">
+                                <span class="comment-icon">💬</span>
+                            </button>
+                            ${hasComment ? '<span class="comment-badge">!</span>' : ''}
+                        </div>
+                        <button class="btn-icon btn-in-progress" onclick="markInProgress('${task.id}')">⚡ In Progress</button>
+                        <button class="btn-icon btn-edit" onclick="editTask('${task.id}')">✏️ Edit</button>
+                        <button class="btn-icon btn-delete" onclick="deleteTask('${task.id}')">🗑️ Delete</button>
+                    </div>
+                </div>
+            `;
+            }).join('');
+        }
+
+        // Escape HTML to prevent XSS
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Toggle task status
+        function toggleTaskStatus(id) {
+            const task = tasks.find(t => t.id === id);
+            if (task) {
+                const oldStatus = task.status;
+                task.status = task.status === 'completed' ? 'pending' : 'completed';
+                task.modifiedOn = new Date().toISOString().split('T')[0];
+                recordHistory('status-changed', id, task, { ...task, status: oldStatus });
+                saveTasks();
+            }
+        }
+
+        // Mark task as in progress
+        function markInProgress(id) {
+            const task = tasks.find(t => t.id === id);
+            if (task) {
+                const oldStatus = task.status;
+                task.status = 'in-progress';
+                task.modifiedOn = new Date().toISOString().split('T')[0];
+                recordHistory('status-changed', id, task, { ...task, status: oldStatus });
+                saveTasks();
+            }
+        }
+
+        // Toggle comment section
+        function toggleComment(id) {
+            const commentSection = document.getElementById(`comment-section-${id}`);
+            if (commentSection) {
+                commentSection.classList.toggle('active');
+            }
+        }
+
+        // Save comment
+        function saveComment(id) {
+            const task = tasks.find(t => t.id === id);
+            const commentInput = document.getElementById(`comment-input-${id}`);
+            
+            if (task && commentInput) {
+                const commentText = commentInput.value.trim();
+                task.comment = commentText;
+                task.modifiedOn = new Date().toISOString().split('T')[0];
+                
+                // Hide comment section after saving
+                toggleComment(id);
+                
+                // Record history
+                recordHistory('updated', id, task);
+                saveTasks();
+            }
+        }
+
+        // Edit task
+        function editTask(id) {
+            const task = tasks.find(t => t.id === id);
+            if (task) {
+                editingTaskId = id;
+                document.getElementById('task-details').value = task.details;
+                document.getElementById('task-sequence').value = task.sequence;
+                document.getElementById('task-status').value = task.status;
+                document.querySelector('.btn-primary').textContent = 'Update Task';
+                document.getElementById('task-details').focus();
+            }
+        }
+
+        // Delete task
+        function deleteTask(id) {
+            if (confirm('Are you sure you want to delete this task?')) {
+                const task = tasks.find(t => t.id === id);
+                if (task) {
+                    recordHistory('deleted', id, task);
+                }
+                tasks = tasks.filter(t => t.id !== id);
+                saveTasks();
+            }
+        }
+
+        // Event handlers are set up in DOMContentLoaded above
+    </script>
+</body>
+</html>

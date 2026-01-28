@@ -655,9 +655,134 @@
                 width: 100%;
             }
         }
+
+        /* Login Screen Styles */
+        .login-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+        }
+
+        .login-screen.hidden {
+            display: none;
+        }
+
+        .login-card {
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+        }
+
+        .login-card h2 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 1.8em;
+        }
+
+        .login-card p {
+            color: #666;
+            margin-bottom: 25px;
+            font-size: 0.9em;
+        }
+
+        .login-form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .login-input {
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        .login-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .login-btn {
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .login-error {
+            color: #f44336;
+            font-size: 0.9em;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .login-error.show {
+            display: block;
+        }
+
+        .ist-time-hint {
+            color: #999;
+            font-size: 0.85em;
+            margin-top: 10px;
+            font-style: italic;
+        }
+
+        .main-content {
+            display: none;
+        }
+
+        .main-content.visible {
+            display: block;
+        }
     </style>
 </head>
 <body>
+    <!-- Login Screen -->
+    <div class="login-screen" id="login-screen">
+        <div class="login-card">
+            <h2>🔒 Task Manager</h2>
+            <p>Enter password to access</p>
+            <form class="login-form" id="login-form" onsubmit="checkPassword(event)">
+                <input 
+                    type="password" 
+                    class="login-input" 
+                    id="password-input" 
+                    placeholder="Enter password"
+                    autocomplete="off"
+                    autofocus
+                >
+                <button type="submit" class="login-btn">Login</button>
+                <div class="login-error" id="login-error">Incorrect password. Please try again.</div>
+                <div class="ist-time-hint" id="ist-time-hint"></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Content (hidden until login) -->
+    <div class="main-content" id="main-content">
     <div class="container">
         <div class="owner-label">Fakhruddin Khambaty's Task Hub</div>
 
@@ -757,6 +882,7 @@
             </div>
         </div>
     </div>
+    </div> <!-- End main-content -->
 
     <!-- Firebase Realtime Database SDK -->
     <script type="module">
@@ -1437,6 +1563,83 @@
         }
 
         // Event handlers are set up in DOMContentLoaded above
+
+        // Password Protection Functions
+        function getISTTime() {
+            // Get current UTC time
+            const now = new Date();
+            // IST is UTC+5:30
+            const istOffset = 5.5 * 60 * 60 * 1000; // 5.5 hours in milliseconds
+            const istTime = new Date(now.getTime() + istOffset);
+            
+            // Format as HHMM
+            const hours = String(istTime.getUTCHours()).padStart(2, '0');
+            const minutes = String(istTime.getUTCMinutes()).padStart(2, '0');
+            return hours + minutes;
+        }
+
+        function generatePassword() {
+            return getISTTime() + 'fakh';
+        }
+
+        function updateISTHint() {
+            const hintElement = document.getElementById('ist-time-hint');
+            if (hintElement) {
+                const currentPassword = generatePassword();
+                hintElement.textContent = `Current password format: HHMMfakh (e.g., ${currentPassword})`;
+            }
+        }
+
+        function checkPassword(event) {
+            event.preventDefault();
+            const input = document.getElementById('password-input');
+            const errorElement = document.getElementById('login-error');
+            const enteredPassword = input.value.trim();
+            
+            // Get current password (IST time + fakh)
+            const currentPassword = generatePassword();
+            
+            // Also check previous minute's password (in case time just changed)
+            const now = new Date();
+            const istOffset = 5.5 * 60 * 60 * 1000;
+            const istTime = new Date(now.getTime() + istOffset);
+            const prevMinute = new Date(istTime.getTime() - 60 * 1000);
+            const prevHours = String(prevMinute.getUTCHours()).padStart(2, '0');
+            const prevMinutes = String(prevMinute.getUTCMinutes()).padStart(2, '0');
+            const prevPassword = prevHours + prevMinutes + 'fakh';
+            
+            if (enteredPassword === currentPassword || enteredPassword === prevPassword) {
+                // Correct password - hide login screen, show main content
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('main-content').classList.add('visible');
+                // Clear password field
+                input.value = '';
+                errorElement.classList.remove('show');
+            } else {
+                // Wrong password
+                errorElement.classList.add('show');
+                input.value = '';
+                input.focus();
+                // Update hint
+                updateISTHint();
+            }
+        }
+
+        // Update IST hint every minute
+        function startISTHintUpdater() {
+            updateISTHint();
+            setInterval(updateISTHint, 60000); // Update every minute
+        }
+
+        // Initialize password protection
+        document.addEventListener('DOMContentLoaded', () => {
+            startISTHintUpdater();
+            // Focus on password input
+            const passwordInput = document.getElementById('password-input');
+            if (passwordInput) {
+                passwordInput.focus();
+            }
+        });
     </script>
 </body>
 </html>

@@ -758,44 +758,40 @@
         </div>
     </div>
 
-    <!-- Firebase SDK -->
+    <!-- Firebase Realtime Database SDK -->
     <script type="module">
         // Import the functions you need from the SDKs
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-        import { getFirestore, collection, doc, setDoc, getDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js';
+        import { getDatabase, ref, set, get, onValue, off } from 'https://www.gstatic.com/firebasejs/12.8.0/firebase-database.js';
 
         // Your web app's Firebase configuration
-        // REPLACE THESE VALUES WITH YOUR FIREBASE CONFIG
         const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_PROJECT_ID.appspot.com",
-            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-            appId: "YOUR_APP_ID"
+            apiKey: "AIzaSyB4LTGI5biRlJzWCo9dhJLckLrMge6MT9Y",
+            authDomain: "fktaskmanager.firebaseapp.com",
+            databaseURL: "https://fktaskmanager-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "fktaskmanager",
+            storageBucket: "fktaskmanager.firebasestorage.app",
+            messagingSenderId: "894763867665",
+            appId: "1:894763867665:web:dadae49c1b468d92969bb0"
         };
 
-        // Initialize Firebase only if config is provided
+        // Initialize Firebase
         let app, db;
         let useFirebase = false;
         
-        if (firebaseConfig.apiKey && firebaseConfig.apiKey !== "YOUR_API_KEY") {
-            try {
-                app = initializeApp(firebaseConfig);
-                db = getFirestore(app);
-                useFirebase = true;
-                console.log('Firebase initialized successfully');
-            } catch (e) {
-                console.error('Firebase initialization error:', e);
-                useFirebase = false;
-            }
+        try {
+            app = initializeApp(firebaseConfig);
+            db = getDatabase(app);
+            useFirebase = true;
+            console.log('Firebase Realtime Database initialized successfully');
+        } catch (e) {
+            console.error('Firebase initialization error:', e);
+            useFirebase = false;
         }
 
         // Make Firebase available globally
         window.firebaseDb = db;
         window.useFirebase = useFirebase;
-        window.firebaseCollection = 'tasks';
-        window.firebaseHistoryCollection = 'taskHistory';
     </script>
 
     <script>
@@ -909,25 +905,22 @@
             }
         }
 
-        // Load from Firebase
+        // Load from Firebase Realtime Database
         async function loadFromFirebase() {
             const db = window.firebaseDb;
-            const { getDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+            const { ref, get, onValue } = await import('https://www.gstatic.com/firebasejs/12.8.0/firebase-database.js');
             
             try {
-                // Load tasks
-                const tasksDoc = await getDoc(doc(db, window.firebaseCollection, 'data'));
-                if (tasksDoc.exists()) {
-                    tasks = tasksDoc.data().tasks || [];
+                // Load tasks and history
+                const dataRef = ref(db, 'taskData');
+                const snapshot = await get(dataRef);
+                
+                if (snapshot.exists()) {
+                    const data = snapshot.val();
+                    tasks = data.tasks || [];
+                    taskHistory = data.taskHistory || [];
                 } else {
                     tasks = [];
-                }
-
-                // Load history
-                const historyDoc = await getDoc(doc(db, window.firebaseHistoryCollection, 'data'));
-                if (historyDoc.exists()) {
-                    taskHistory = historyDoc.data().history || [];
-                } else {
                     taskHistory = [];
                 }
 
@@ -953,17 +946,20 @@
             if (!window.useFirebase || !window.firebaseDb) return;
 
             const db = window.firebaseDb;
-            const { onSnapshot, doc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+            const { ref, onValue, off } = await import('https://www.gstatic.com/firebasejs/12.8.0/firebase-database.js');
 
             // Unsubscribe from previous listener if exists
             if (firebaseUnsubscribe) {
-                firebaseUnsubscribe();
+                off(firebaseUnsubscribe);
             }
 
             // Listen for changes
-            firebaseUnsubscribe = onSnapshot(doc(db, window.firebaseCollection, 'data'), (doc) => {
-                if (doc.exists()) {
-                    tasks = doc.data().tasks || [];
+            const dataRef = ref(db, 'taskData');
+            firebaseUnsubscribe = onValue(dataRef, (snapshot) => {
+                if (snapshot.exists()) {
+                    const data = snapshot.val();
+                    tasks = data.tasks || [];
+                    taskHistory = data.taskHistory || [];
                     updateDateDisplay();
                     renderTasks();
                     updateProgress();
@@ -1045,19 +1041,16 @@
             }
         }
 
-        // Save to Firebase
+        // Save to Firebase Realtime Database
         async function saveToFirebase() {
             const db = window.firebaseDb;
-            const { setDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+            const { ref, set } = await import('https://www.gstatic.com/firebasejs/12.8.0/firebase-database.js');
             
             try {
-                await setDoc(doc(db, window.firebaseCollection, 'data'), {
+                const dataRef = ref(db, 'taskData');
+                await set(dataRef, {
                     tasks: tasks,
-                    lastUpdated: new Date().toISOString()
-                });
-                
-                await setDoc(doc(db, window.firebaseHistoryCollection, 'data'), {
-                    history: taskHistory,
+                    taskHistory: taskHistory,
                     lastUpdated: new Date().toISOString()
                 });
             } catch (e) {

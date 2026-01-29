@@ -468,6 +468,15 @@
             background: #f57c00;
         }
 
+        .btn-move-date {
+            background: #9c27b0;
+            color: white;
+        }
+
+        .btn-move-date:hover {
+            background: #7b1fa2;
+        }
+
         .btn-comment {
             background: #2196f3;
             color: white;
@@ -743,11 +752,40 @@
             display: block;
         }
 
-        .ist-time-hint {
-            color: #999;
-            font-size: 0.85em;
-            margin-top: 10px;
-            font-style: italic;
+        .move-date-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 10001;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .move-date-modal.show {
+            display: flex;
+        }
+
+        .move-date-card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .move-date-card h3 {
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+
+        .move-date-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
         }
 
         .main-content {
@@ -776,7 +814,6 @@
                 >
                 <button type="submit" class="login-btn">Login</button>
                 <div class="login-error" id="login-error">Incorrect password. Please try again.</div>
-                <div class="ist-time-hint" id="ist-time-hint"></div>
             </form>
         </div>
     </div>
@@ -884,6 +921,21 @@
     </div>
     </div> <!-- End main-content -->
 
+    <!-- Move Date Modal -->
+    <div class="move-date-modal" id="move-date-modal">
+        <div class="move-date-card">
+            <h3>Move Task to Date</h3>
+            <div class="form-group">
+                <label for="move-date-input">Select New Date:</label>
+                <input type="date" id="move-date-input" class="form-group input" style="width: 100%; padding: 12px 15px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1em;">
+            </div>
+            <div class="move-date-actions">
+                <button class="btn btn-primary" onclick="confirmMoveDate()">Move</button>
+                <button class="btn btn-secondary" onclick="closeMoveDateModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Firebase Realtime Database SDK -->
     <script type="module">
         // Import the functions you need from the SDKs
@@ -962,7 +1014,7 @@
                             task.sequence = sequence;
                             const statusChanged = task.status !== status;
                             task.status = status;
-                            task.modifiedOn = today;
+                            // Don't update modifiedOn - keep original date
                             recordHistory('updated', editingTaskId, task, oldData);
                             if (statusChanged) {
                                 recordHistory('status-changed', editingTaskId, task, oldData);
@@ -1471,6 +1523,7 @@
                             ${hasComment ? '<span class="comment-badge">!</span>' : ''}
                         </div>
                         <button class="btn-icon btn-in-progress" onclick="markInProgress('${task.id}')">⚡ In Progress</button>
+                        <button class="btn-icon btn-move-date" onclick="showMoveDateModal('${task.id}')">📅 Move Date</button>
                         <button class="btn-icon btn-edit" onclick="editTask('${task.id}')">✏️ Edit</button>
                         <button class="btn-icon btn-delete" onclick="deleteTask('${task.id}')">🗑️ Delete</button>
                     </div>
@@ -1492,7 +1545,7 @@
             if (task) {
                 const oldStatus = task.status;
                 task.status = task.status === 'completed' ? 'pending' : 'completed';
-                task.modifiedOn = new Date().toISOString().split('T')[0];
+                // Don't update modifiedOn - keep original date
                 recordHistory('status-changed', id, task, { ...task, status: oldStatus });
                 saveTasks();
             }
@@ -1504,10 +1557,68 @@
             if (task) {
                 const oldStatus = task.status;
                 task.status = 'in-progress';
-                task.modifiedOn = new Date().toISOString().split('T')[0];
+                // Don't update modifiedOn - keep original date
                 recordHistory('status-changed', id, task, { ...task, status: oldStatus });
                 saveTasks();
             }
+        }
+
+        // Move task to a different date
+        let moveDateTaskId = null;
+
+        function showMoveDateModal(id) {
+            moveDateTaskId = id;
+            const task = tasks.find(t => t.id === id);
+            const modal = document.getElementById('move-date-modal');
+            const dateInput = document.getElementById('move-date-input');
+            
+            if (task && dateInput) {
+                // Set current createdOn date as default
+                dateInput.value = task.createdOn;
+                modal.classList.add('show');
+                dateInput.focus();
+            }
+        }
+
+        function closeMoveDateModal() {
+            const modal = document.getElementById('move-date-modal');
+            modal.classList.remove('show');
+            moveDateTaskId = null;
+        }
+
+        // Close modal when clicking outside
+        document.addEventListener('click', (e) => {
+            const modal = document.getElementById('move-date-modal');
+            if (modal && modal.classList.contains('show') && e.target === modal) {
+                closeMoveDateModal();
+            }
+        });
+
+        function confirmMoveDate() {
+            if (!moveDateTaskId) return;
+            
+            const dateInput = document.getElementById('move-date-input');
+            const newDate = dateInput.value;
+            
+            if (!newDate) {
+                alert('Please select a date');
+                return;
+            }
+            
+            const task = tasks.find(t => t.id === moveDateTaskId);
+            if (task) {
+                const oldCreatedOn = task.createdOn;
+                task.createdOn = newDate;
+                task.modifiedOn = newDate; // Update modifiedOn when moving date
+                recordHistory('updated', moveDateTaskId, task, { ...task, createdOn: oldCreatedOn });
+                saveTasks();
+            }
+            
+            closeMoveDateModal();
+            // Refresh the view
+            updateDateDisplay();
+            renderTasks();
+            updateProgress();
         }
 
         // Toggle comment section
@@ -1526,7 +1637,7 @@
             if (task && commentInput) {
                 const commentText = commentInput.value.trim();
                 task.comment = commentText;
-                task.modifiedOn = new Date().toISOString().split('T')[0];
+                // Don't update modifiedOn - keep original date
                 
                 // Hide comment section after saving
                 toggleComment(id);
@@ -1572,22 +1683,17 @@
             const istOffset = 5.5 * 60 * 60 * 1000; // 5.5 hours in milliseconds
             const istTime = new Date(now.getTime() + istOffset);
             
-            // Format as HHMM
-            const hours = String(istTime.getUTCHours()).padStart(2, '0');
-            const minutes = String(istTime.getUTCMinutes()).padStart(2, '0');
-            return hours + minutes;
+            // Format as monthyearhour (MMYYYYHH)
+            // Example: January 2026, 10th hour = 01202610
+            const month = String(istTime.getUTCMonth() + 1).padStart(2, '0'); // 01-12
+            const year = String(istTime.getUTCFullYear()); // 2026
+            const hour = String(istTime.getUTCHours()).padStart(2, '0'); // 00-23
+            
+            return month + year + hour;
         }
 
         function generatePassword() {
-            return getISTTime() + 'fakh';
-        }
-
-        function updateISTHint() {
-            const hintElement = document.getElementById('ist-time-hint');
-            if (hintElement) {
-                const currentPassword = generatePassword();
-                hintElement.textContent = `Current password format: HHMMfakh (e.g., ${currentPassword})`;
-            }
+            return getISTTime();
         }
 
         function checkPassword(event) {
@@ -1596,17 +1702,18 @@
             const errorElement = document.getElementById('login-error');
             const enteredPassword = input.value.trim();
             
-            // Get current password (IST time + fakh)
+            // Get current password (monthyearhour format)
             const currentPassword = generatePassword();
             
-            // Also check previous minute's password (in case time just changed)
+            // Also check previous hour's password (in case hour just changed)
             const now = new Date();
             const istOffset = 5.5 * 60 * 60 * 1000;
             const istTime = new Date(now.getTime() + istOffset);
-            const prevMinute = new Date(istTime.getTime() - 60 * 1000);
-            const prevHours = String(prevMinute.getUTCHours()).padStart(2, '0');
-            const prevMinutes = String(prevMinute.getUTCMinutes()).padStart(2, '0');
-            const prevPassword = prevHours + prevMinutes + 'fakh';
+            const prevHour = new Date(istTime.getTime() - 60 * 60 * 1000);
+            const prevMonth = String(prevHour.getUTCMonth() + 1).padStart(2, '0');
+            const prevYear = String(prevHour.getUTCFullYear());
+            const prevHourValue = String(prevHour.getUTCHours()).padStart(2, '0');
+            const prevPassword = prevMonth + prevYear + prevHourValue;
             
             if (enteredPassword === currentPassword || enteredPassword === prevPassword) {
                 // Correct password - hide login screen, show main content
@@ -1620,20 +1727,11 @@
                 errorElement.classList.add('show');
                 input.value = '';
                 input.focus();
-                // Update hint
-                updateISTHint();
             }
-        }
-
-        // Update IST hint every minute
-        function startISTHintUpdater() {
-            updateISTHint();
-            setInterval(updateISTHint, 60000); // Update every minute
         }
 
         // Initialize password protection
         document.addEventListener('DOMContentLoaded', () => {
-            startISTHintUpdater();
             // Focus on password input
             const passwordInput = document.getElementById('password-input');
             if (passwordInput) {
